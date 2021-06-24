@@ -60,10 +60,15 @@ ui <- dashboardPage(
                        fluidRow(
                          column(width = 10, plotOutput("JudgePlot2Output")),
                          column(width = 2,
-                                sliderInput('year2', 'Year Range (disposition date)', 
+                                sliderInput('year_judge2tab', 'Year Range (disposition date)', 
                                             min=2010, max=2020,
                                             value=c(2010, 2020), step=1, 
-                                            round=T, sep=""))
+                                            round=T, sep="") %>% 
+                                  helper(type = "inline",
+                                         title = "Year Range",
+                                         content = c("Select the year range (disposition year).",
+                                                     "The plot and table will display the most frequent judges based on the number of dockets they appear on."),
+                                         size = "m"))
                        ),
                        ### bottom row ####
                        fluidRow(
@@ -76,7 +81,14 @@ ui <- dashboardPage(
                        fluidRow(
                          column(width = 10, plotOutput("JudgePlot1Output")),
                          column(width = 2, 
-                                selectInput('judge', 'Judge', judge_options),
+                                selectInput('judge', 'Judge', judge_options) %>% 
+                                  helper(type = "inline",
+                                         title = "Frequent Offenses",
+                                         content = c(
+                                           "Select your judge of interest. The choices are listed with the most common judges appearing first.",
+                                           "Select the year range (disposition year).",
+                                            "The plot and table will display the number of dockets for the five most common offenses (statute descriptions) that the selected judge adjudicated. All other offenses are lumped into 'Other'."),
+                                         size = "m"),
                                 sliderInput('year', 'Year Range (disposition date)', 
                                             min=2010, max=2020,
                                             value=c(2010, 2020), step=1, 
@@ -256,6 +268,14 @@ ui <- dashboardPage(
                        ### bottom row tab 1 ####
                        fluidRow(
                          column(width = 12, reactableOutput("TableOutputSentences1"))
+                       ),
+                       
+                       fluidRow(
+                         column(width = 12, 
+                                "This dataset included demographic information and various details about the committed crimes that might be of interest when comparing judges and the length of sentences. This section of the dashboard allows the user to determine which metadata is important to them and select which judges they would like to compare. Multiple user inputs allow the user to filter the dockets based on race, disposition method, grade of the offense, and to select for specific dockets based on an input keyword such as “Theft”, “Child”, “Auto”, or any other keyword of the user’s choice. The user also has the option of changing how the data is grouped, easing the comparison between judges based on whatever metadata might interest the user. 
+
+Keep in mind that this panel is done at the docket level, meaning that the sentence length on the y axis reflects the maximum sentence time for that docket and that the crime descriptions may have been combined to account for all offenses committed on the same docket. 
+")
                        )
                                   
                          ),
@@ -339,6 +359,7 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+  observe_helpers()
   #
   # The data ----
   # 
@@ -359,8 +380,8 @@ server <- function(input, output) {
     #   filter(
     #          disposition_year >= input$year2[1] & disposition_year <= input$year2[2]) %>% 
     #   distinct(judge, docket_id, disposition_year)
-    unique(data.table(merged)[disposition_year >= input$year[1] & 
-                                disposition_year <= input$year[2],
+    unique(data.table(merged)[disposition_year >= input$year_judge2tab[1] & 
+                                disposition_year <= input$year_judge2tab[2],
                               .(judge, docket_id, disposition_year)]) %>% 
       as.data.frame()
   })

@@ -27,6 +27,7 @@ library(dplyr)
 library(forcats)
 library(lubridate)
 library(ggiraph)
+library(shinyhelper)
 
 # `data_bars()` from dev version of {reactablefmtr}
 source("https://raw.githubusercontent.com/kcuilla/reactablefmtr/ad15734b5007b3a9d734f2ccc8999e964b703041/R/data_bars.R")
