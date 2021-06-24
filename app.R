@@ -344,26 +344,33 @@ server <- function(input, output) {
   # 
 
   # JudgePlot1 data
+  # Converted these to use data.table
   data_judge_filter <- reactive({
-    merged %>% 
-      filter(judge==input$judge,
-             disposition_year >= input$year[1] & disposition_year <= input$year[2])
+    # merged %>% 
+    #   filter(judge==input$judge,
+    #          disposition_year >= input$year[1] & disposition_year <= input$year[2])
+    as.data.frame(data.table(merged)[judge == input$judge & 
+                                       (disposition_year >= input$year[1] & 
+                                          disposition_year <= input$year[2])])
   })
   # JudgePlot2 data
   data_judge2_filter <- reactive({
-    merged %>% 
-      filter(
-             disposition_year >= input$year2[1] & disposition_year <= input$year2[2]) %>% 
-      distinct(judge, docket_id, disposition_year)
+    # merged %>% 
+    #   filter(
+    #          disposition_year >= input$year2[1] & disposition_year <= input$year2[2]) %>% 
+    #   distinct(judge, docket_id, disposition_year)
+    unique(data.table(merged)[disposition_year >= input$year[1] & 
+                                disposition_year <= input$year[2],
+                              .(judge, docket_id, disposition_year)]) %>% 
+      as.data.frame()
   })
   
   # SentencePlot2 data
   # This is just for the reactable - choose selected judge
   data_offense_filter <- reactive({
-    merged %>% 
-      filter(description_clean %in% input$description,
-             grade %in% input$grade,
-             judge==input$judge_sentence)
+    data.table(merged)[description_clean %in% input$description & grade %in% 
+                         input$grade & judge == input$judge_sentence] %>% 
+      as.data.frame()
   })
   
   sentence_length_summary <- reactive({
@@ -421,30 +428,37 @@ server <- function(input, output) {
   # Sentence plot 1 data (AM)
   # filtered.data <- eventReactive(input$sent_button, {
   filtered.data <- reactive({
-    merged.narrow %>%
-      #filter based on selection
-      dplyr::filter(race %in% input$races,
-             max_grade %in% input$max_grade,
-             #Type == input$y.axis,
-             disposition_method %in% input$disposition_methods) %>% 
-      dplyr::filter(
-             # !is.na(eval(parse(text = input$y.axis))),
-             stringr::str_detect((statute_description),
-                                       paste(stringr::str_to_lower(input$crime_descriptions), collapse = "|") ) |
-             stringr::str_detect((Chapter_Description),
-                                   paste(stringr::str_to_lower(input$crime_descriptions), collapse = "|") )
-             # stringr::str_detect(tolower(Title_Description),
-             #                    paste(tolower(input$title_descriptions), collapse = "|") ),
-             # stringr::str_detect(tolower(disposition_method),
-             #                    paste(tolower(input$disposition_methods), collapse = "|") )
-             
-             ) %>% 
-      # dplyr::mutate(on.y.axis = eval(parse(text = input$y.axis))) %>%
-      dplyr::mutate(in_select_judges = ifelse(Judge %in% input$judges_of_interest, 
-                                             Judge, "Other Judges")) %>%
-      dplyr::mutate(select_judges = forcats::fct_lump_n(in_select_judges, n = input$nfactors)) %>% 
-      dplyr::mutate(to.facet = forcats::fct_lump_n(eval(parse(text = input$facet)), n = input$nfactors)) %>% 
-      dplyr::filter(to.facet != "Other")
+    # merged.narrow %>%
+    #   #filter based on selection
+    #   dplyr::filter(race %in% input$races,
+    #          max_grade %in% input$max_grade,
+    #          #Type == input$y.axis,
+    #          disposition_method %in% input$disposition_methods) %>% 
+    #   dplyr::filter(
+    #          # !is.na(eval(parse(text = input$y.axis))),
+    #          stringr::str_detect((statute_description),
+    #                                    paste(stringr::str_to_lower(input$crime_descriptions), collapse = "|") ) |
+    #          stringr::str_detect((Chapter_Description),
+    #                                paste(stringr::str_to_lower(input$crime_descriptions), collapse = "|") )
+    #          # stringr::str_detect(tolower(Title_Description),
+    #          #                    paste(tolower(input$title_descriptions), collapse = "|") ),
+    #          # stringr::str_detect(tolower(disposition_method),
+    #          #                    paste(tolower(input$disposition_methods), collapse = "|") )
+    #          
+    #          ) %>% 
+    #   # dplyr::mutate(on.y.axis = eval(parse(text = input$y.axis))) %>%
+    #   dplyr::mutate(in_select_judges = ifelse(Judge %in% input$judges_of_interest, 
+    #                                          Judge, "Other Judges")) %>%
+    #   dplyr::mutate(select_judges = forcats::fct_lump_n(in_select_judges, n = input$nfactors)) %>% 
+    #   dplyr::mutate(to.facet = forcats::fct_lump_n(eval(parse(text = input$facet)), n = input$nfactors)) %>% 
+    #   dplyr::filter(to.facet != "Other")
+    
+    data.table(merged.narrow)[race %in% input$races &
+                                max_grade %in% input$max_grade &
+                                disposition_method %in% input$disposition_methods][stringr::str_detect((statute_description), paste(stringr::str_to_lower(input$crime_descriptions), collapse = "|")) |
+                                                                                     stringr::str_detect((Chapter_Description), paste(stringr::str_to_lower(input$crime_descriptions), collapse = "|"))][, `:=`(in_select_judges = ifelse(Judge %in%
+                                                                                                                                                                                                                                            ..input$judges_of_interest, Judge, "Other Judges"))][, `:=`(select_judges = forcats::fct_lump_n(in_select_judges,                                                                                               n = ..input$nfactors))][, `:=`(to.facet = forcats::fct_lump_n(eval(parse(text = ..input$facet)),                                                                                                                                                                             n = ..input$nfactors))][to.facet != "Other"] %>% 
+      as.data.frame()
   })
   # text.y.axis <- eventReactive(input$sent_button, { input$y.axis})
   
